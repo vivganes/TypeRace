@@ -1,0 +1,179 @@
+<html>
+    <head>
+        <script language="JavaScript">
+            
+            
+                
+            var connection = null;
+            var me,opponent=0;  
+            var myScore,oppScore = 0;
+            function onInit(){   
+                document.getElementById("textTyped").onkeypress = function (e){                    
+                    sendKeyPress(e);
+                };
+                
+                 document.getElementById("textTyped").disabled=true;
+                
+                connection = new WebSocket('ws://localhost:8080/TypeRace/type');
+                
+                connection.onopen = function(){
+                    /*Send a small message to the console once the connection is established */
+                    document.getElementById("log").innerHTML += "\n" + ('Connection open!');
+                    document.getElementById("log").scrollTop =    document.getElementById("log").scrollHeight;
+                    connection.send("PLAYER ?"); // REQUEST PLAYER NUMBER ONCE CONNECTION IS OPEN
+                                  
+                }
+                
+                connection.onclose = function(){
+                    document.getElementById("log").innerHTML += "\n" +('Connection closed');
+                    document.getElementById("log").scrollTop =    document.getElementById("log").scrollHeight;
+                }
+                
+                connection.onerror = function(error){
+                    document.getElementById("log").innerHTML += "\n" +('Error detected: ' + error);
+                    document.getElementById("log").scrollTop =    document.getElementById("log").scrollHeight;
+                }
+                
+                
+                connection.onmessage = function(e){
+                    var server_message = e.data;
+                    document.getElementById("log").innerHTML += "\n" +(server_message);
+                    document.getElementById("log").scrollTop =    document.getElementById("log").scrollHeight;
+                    processMessage(e.data);
+                }
+                
+            }
+            
+            /* 
+             * Messages Received
+             * ==========================================
+             * 1. Countdowns - COUNTDOWN 5, COUNTDOWN  4, COUNTDOWN 3, ETC.
+             * 2. Score Update - SCORE PLAYER1 12, SCORE PLAYER2 11
+             * 3. Player allocation (1 or 2) - PLAYER 1, PLAYER 2
+             * 4. Gameover - END
+             */
+           
+            function processMessage(message){
+                var commandWords= message.split(" ");
+                var command = commandWords[0];
+                
+                if(command == "COUNTDOWN"){
+                    displayCountDown(commandWords[1]);
+                } else if(command == "SCORE"){
+                    updateScore(commandWords[1], commandWords[2]);
+                } else if(command == "PLAYER"){
+                    displayPlayerName(commandWords[1]);
+                }else if(command == "END"){
+                    endGame();
+                }
+            }
+            
+            function displayCountDown(count){
+                if(count == "0"){
+                  document.getElementById("textTyped").disabled=false;
+                  document.getElementById("notification").innerHTML ="<h2>Race in progress..</h2>";    
+                }else{
+                document.getElementById("notification").innerHTML ="<h2>Race starts in "+count+" second(s)</h2>";                
+                }
+            }
+            
+            function updateScore(player, score){
+                if(player == "PLAYER"+me){
+                    document.getElementById("myScore").innerHTML =score;
+                    myScore = score;
+                }else{
+                    document.getElementById("oppScore").innerHTML =score;
+                    oppScore = score;
+                }
+            }
+            
+            function displayPlayerName(name){
+                if(name == "0"){
+                    document.getElementById("notification").innerHTML ="<h2>Sorry! Two players are already playing. Try after sometime!</h2>";
+                    document.getElementById("textTyped").disabled=true;
+                }else if (name == "1"){
+                    me = 1;
+                    opponent = 2;
+                    document.getElementById("notification").innerHTML ="<h2>Waiting for opponent to join....</h2>";
+                }else{
+                    me = 2;
+                    opponent = 1;
+                }
+            }
+            
+            function endGame(){ 
+                var winMessage = "";
+                if(myScore>oppScore){
+                     winMessage = "Congratulations! You WIN!";
+                }else if (myScore < oppScore){
+                    winMessage = "You LOSE!";
+                }else{
+                    winMessage = "Oops! That's a TIE!";
+                }
+                
+                alert(winMessage);
+                document.getElementById("notification").innerHTML ="<h2>"+winMessage+"</h2>";
+                document.getElementById("textTyped").disabled=true;
+            }
+            
+ 
+            /*
+            * Messages received
+            * ===========================================
+            * 1. Player id request - PLAYER ? (first one gets 1 , second one gets 2 and all others get error)
+            * 2. Type event - TYPE PLAYER1 C <chartyped>, TYPE PLAYER1 B (c for char, b for backspace)
+            * 
+            */
+            function sendKeyPress(e){                
+                connection.send("TYPE PLAYER"+me+" C "+e.which);
+            }
+        </script>
+
+
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <title>TypeRace - Race against time...</title>
+    </head>
+    <body onLoad="onInit();" bgColor="#99cccc" style="font-family: arial;">
+        <div id="header" style="background: #99cccc; "><h1>TypeRace 1.0</h1></div>
+          
+        <div id="notification" style="background: #cccc99;"></div>
+   
+        <div id = "scoreboard" style="background: #ffffcc;">
+
+            <b> SCOREBOARD</b><br/>
+            <b>-------------------------</b><br/>
+            <b> You: </b> <span id="myScore"></span><br/>
+            <b> Opponent: </b> <span id="oppScore"></span> <br/>
+            <b>-------------------------</b><br/>
+
+        </div>
+
+        <br/>
+        <table border="0" width="100%">
+            <tr>
+                <td width="50%" valign="top">
+                
+                    <p>Generally, open source refers to a program in which the source code is available to the general public for use and/or modification from its original design. Open source code is typically created as a collaborative effort in which programmers improve upon the code and share the changes within the community. Open source sprouted in the technological community as a response to proprietary software owned by corporations.</p>
+                    <p>The open-source model includes the concept of concurrent yet different agendas and differing approaches in production, in contrast with more centralized models of development such as those typically used in commercial software companies.</p>
+                    
+                </td>
+                <td>
+                    
+                    <div id = "typeArea" >
+
+                        <textArea id="textTyped" cols="70" rows="10" placeholder="Type the text here..."></textarea>
+
+                    </div>
+                    
+                </td>                
+                
+            </tr>
+        </table>
+  
+        <div style="background: #aaaaaa;" >
+        <b>Log</b><br/>--------------<br/>
+        <textarea id="log" cols ="100" rows="5" disabled></textarea><br/>
+        </div>
+
+    </body>
+</html>
