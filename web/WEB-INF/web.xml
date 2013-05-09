@@ -3,11 +3,8 @@
     <servlet>
         <servlet-name>TypeRaceAppRegistrationServlet</servlet-name>
         <servlet-class>com.typeRace.TypeRaceAppRegistrationServlet</servlet-class>
+        <load-on-startup>1</load-on-startup>
     </servlet>
-    <servlet-mapping>
-        <servlet-name>TypeRaceAppRegistrationServlet</servlet-name>
-        <url-pattern>/type</url-pattern>
-    </servlet-mapping>
     <session-config>
         <session-timeout>
             30
